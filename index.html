@@ -68,6 +68,10 @@
                     <button @click="activeTab = 'list'" :class="activeTab === 'list' ? 'bg-slate-800 text-blue-400 font-semibold' : 'text-slate-300 hover:bg-slate-800 hover:text-white'" class="px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
                         <i class="fa-solid fa-list-check"></i> 100 大校系分析
                     </button>
+                    <button @click="activeTab = 'qualification'" :class="activeTab === 'qualification' ? 'bg-slate-800 text-blue-400 font-semibold' : 'text-slate-300 hover:bg-slate-800 hover:text-white'" class="px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-clipboard-check"></i> 我的志願查核
+                        <span class="bg-white/20 text-xs font-bold px-1.5 py-0.5 rounded-full" x-text="bookmarkItems.length"></span>
+                    </button>
                     <button @click="activeTab = 'backup'" :class="activeTab === 'backup' ? 'bg-slate-800 text-blue-400 font-semibold' : 'text-slate-300 hover:bg-slate-800 hover:text-white'" class="px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
                         <i class="fa-solid fa-shield-halved"></i> 備援補充校系
                     </button>
@@ -105,6 +109,9 @@
             <button @click="activeTab = 'list'" :class="activeTab === 'list' ? 'text-blue-400 font-bold' : 'text-slate-400'" class="py-1 flex flex-col items-center">
                 <i class="fa-solid fa-list-check text-base mb-0.5"></i> 校系分析
             </button>
+            <button @click="activeTab = 'qualification'" :class="activeTab === 'qualification' ? 'text-blue-400 font-bold' : 'text-slate-400'" class="py-1 flex flex-col items-center">
+                <i class="fa-solid fa-clipboard-check text-base mb-0.5"></i> 志願查核
+            </button>
             <button @click="activeTab = 'backup'" :class="activeTab === 'backup' ? 'text-blue-400 font-bold' : 'text-slate-400'" class="py-1 flex flex-col items-center">
                 <i class="fa-solid fa-shield-halved text-base mb-0.5"></i> 備援校系
             </button>
@@ -116,6 +123,53 @@
 
     <!-- 主要內容區 Main Container -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- 頁籤：我的志願查核 -->
+        <div x-show="activeTab === 'qualification'" x-cloak class="space-y-6">
+            <section class="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-lg">
+                <div class="flex items-center gap-3 mb-3">
+                    <i class="fa-solid fa-clipboard-check text-blue-300 text-2xl"></i>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold">我的志願查核</h2>
+                </div>
+                <p class="text-slate-300 text-sm leading-relaxed">只查核你在校系卡片按星號收藏的志願。結果分成「已知不符」、「需要查分則」與「目前沒有發現科目衝突」，不把錄取機率當成資格保證。</p>
+                <div class="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                    <div class="bg-white/10 rounded-xl p-3"><div class="text-2xl font-black" x-text="qualificationSummary.total"></div><div class="text-xs text-slate-300">已選志願</div></div>
+                    <div class="bg-rose-400/20 rounded-xl p-3"><div class="text-2xl font-black text-rose-200" x-text="qualificationSummary.ineligible"></div><div class="text-xs text-rose-100">已知不符</div></div>
+                    <div class="bg-amber-400/20 rounded-xl p-3"><div class="text-2xl font-black text-amber-200" x-text="qualificationSummary.review"></div><div class="text-xs text-amber-100">需要查分則</div></div>
+                    <div class="bg-emerald-400/20 rounded-xl p-3"><div class="text-2xl font-black text-emerald-200" x-text="qualificationSummary.clear"></div><div class="text-xs text-emerald-100">目前無衝突</div></div>
+                </div>
+            </section>
+
+            <template x-if="bookmarkItems.length === 0">
+                <section class="bg-white rounded-2xl border border-slate-200 p-8 text-center">
+                    <i class="fa-regular fa-star text-4xl text-amber-400 mb-3"></i>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">目前還沒有選定志願</h3>
+                    <p class="text-sm text-slate-500 mb-5">請回到「100 大校系分析」，在想填的校系卡片按星號，再回到本頁查核。</p>
+                    <button @click="activeTab = 'list'" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500"><i class="fa-solid fa-list-check mr-1"></i> 回到校系分析</button>
+                </section>
+            </template>
+
+            <template x-if="bookmarkItems.length > 0">
+                <section class="space-y-4">
+                    <template x-for="item in qualificationItems" :key="item.department.id">
+                        <article class="bg-white rounded-2xl border p-5 shadow-sm" :class="item.status === 'ineligible' ? 'border-rose-300' : (item.status === 'review' ? 'border-amber-300' : 'border-emerald-200')">
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                <div>
+                                    <div class="text-xs text-slate-500 mb-1">第 <span x-text="item.department.pdf_order"></span> 順位 · <span x-text="item.department.is_national ? '國立' : '私立'"></span></div>
+                                    <h3 class="font-bold text-lg text-slate-900"><span x-text="item.department.school"></span>｜<span x-text="item.department.dept"></span></h3>
+                                </div>
+                                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap" :class="item.status === 'ineligible' ? 'bg-rose-100 text-rose-700' : (item.status === 'review' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700')">
+                                    <i :class="item.status === 'ineligible' ? 'fa-solid fa-xmark' : (item.status === 'review' ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-check')"></i>
+                                    <span x-text="item.label"></span>
+                                </span>
+                            </div>
+                            <p class="mt-3 text-sm leading-relaxed" :class="item.status === 'ineligible' ? 'text-rose-800' : (item.status === 'review' ? 'text-amber-800' : 'text-emerald-800')" x-text="item.reason"></p>
+                            <div class="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">通過機率資料：<span x-text="typeof item.department.pass_prob === 'number' ? item.department.pass_prob + '%' : item.department.pass_prob"></span>（僅供排序參考）</div>
+                        </article>
+                    </template>
+                </section>
+            </template>
+        </div>
 
         <!-- 頁籤一：100 大校系分析區塊 -->
         <div x-show="activeTab === 'list'">
@@ -712,6 +766,52 @@
 
                 get bookmarkItems() {
                     return this.departments.filter(d => this.bookmarks.includes(d.id));
+                },
+
+                get qualificationItems() {
+                    return this.bookmarkItems.map(department => this.evaluateQualification(department));
+                },
+
+                get qualificationSummary() {
+                    const items = this.qualificationItems;
+                    return {
+                        total: items.length,
+                        ineligible: items.filter(item => item.status === 'ineligible').length,
+                        review: items.filter(item => item.status === 'review').length,
+                        clear: items.filter(item => item.status === 'clear').length
+                    };
+                },
+
+                evaluateQualification(department) {
+                    const englishScore = 9;
+                    const englishFrontStandard = 11;
+                    const isCentralKnownEnglishRule = department.school === '國立中央大學' && /資工|電機|通訊|電資/.test(department.dept);
+                    const isSunYatSenKnownEnglishRule = department.school === '國立中山大學' && /電機.*英語/.test(department.dept);
+
+                    if ((isCentralKnownEnglishRule || isSunYatSenKnownEnglishRule) && englishScore < englishFrontStandard) {
+                        return {
+                            department,
+                            status: 'ineligible',
+                            label: '已知不符',
+                            reason: `英文 ${englishScore} 級，低於該校系要求的英文前標 ${englishFrontStandard} 級，先列為不符合。`
+                        };
+                    }
+
+                    if (/全英|國際|英語/.test(department.dept)) {
+                        return {
+                            department,
+                            status: 'review',
+                            label: '需要查分則',
+                            reason: '此校系含全英語、國際或英語組別字樣；目前成績未直接判定不符，但仍須核對 115 學年度分則的英文檢定、授課語言與採計方式。'
+                        };
+                    }
+
+                    return {
+                        department,
+                        status: 'clear',
+                        label: '目前無科目衝突',
+                        reason: '依目前已登錄成績，沒有在平台資料中發現明確的科目或已知檢定衝突；這不代表錄取保證，仍須核對該系官方分則與加權。'
+                    };
                 },
 
                 toggleBookmark(item) {
