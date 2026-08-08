@@ -422,7 +422,7 @@
                                 <div class="font-bold text-slate-900 text-base mb-2" x-text="item.school"></div>
                                 <div class="text-xs font-semibold text-slate-500 mb-1">可考慮科系</div>
                                 <ul class="list-disc list-inside text-sm text-slate-700 space-y-1">
-                                    <template x-for="dept in item.depts" :key="dept">
+                                    <template x-for="dept in (Array.isArray(item.depts) ? item.depts : [item.depts])" :key="dept">
                                         <li x-text="dept"></li>
                                     </template>
                                 </ul>
@@ -445,7 +445,7 @@
                             <div class="bg-indigo-50/40 p-4 rounded-xl border border-indigo-100/60">
                                 <div class="font-bold text-indigo-950 text-base mb-2" x-text="item.school"></div>
                                 <ul class="list-disc list-inside text-sm text-slate-700 space-y-1">
-                                    <template x-for="dept in item.depts" :key="dept">
+                                    <template x-for="dept in (Array.isArray(item.depts) ? item.depts : [item.depts])" :key="dept">
                                         <li x-text="dept"></li>
                                     </template>
                                 </ul>
@@ -606,7 +606,7 @@
     </footer>
 
     <!-- 腳本區域 Script -->
-    <script src="data.js"></script>
+    <script src="data.js?v=20260808-2"></script>
     <script>
         function app() {
             return {
