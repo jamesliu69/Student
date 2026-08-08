@@ -294,7 +294,7 @@
                                             錄取機率 <span x-text="item.pass_prob + '%'"></span>
                                         </span>
                                     </template>
-                                    <template x-if="item.pass_prob === '未標示' || item.pass_prob === None">
+                                    <template x-if="item.pass_prob === '未標示' || item.pass_prob === null">
                                         <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-200 text-slate-600">
                                             機率未標示
                                         </span>
@@ -364,7 +364,7 @@
                                     <span class="px-2 py-1 rounded bg-slate-100 text-slate-700 font-medium" x-text="item.category"></span>
                                 </td>
                                 <td class="p-3 whitespace-nowrap font-bold text-xs">
-                                    <span x-text="item.pass_prob !== None && item.pass_prob !== '未標示' ? item.pass_prob + '%' : '未標示'" 
+                                    <span x-text="item.pass_prob !== null && item.pass_prob !== '未標示' ? item.pass_prob + '%' : '未標示'"
                                           :class="typeof item.pass_prob === 'number' && item.pass_prob >= 50 ? 'text-emerald-600' : 'text-amber-600'"></span>
                                 </td>
                                 <td class="p-3 text-xs leading-relaxed max-w-xs" x-text="item.content"></td>
