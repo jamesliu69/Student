@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>115 學年度大學志願校系探索與分析平台</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; color: black; }
+            .card-print { break-inside: avoid; border: 1px solid #ccc !important; box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col" x-data="app()" x-init="initData()">
+
+    <!-- 頂部導覽列 Header -->
+    <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- 標題 Logo -->
+                <div class="flex items-center space-x-3 cursor-pointer" @click="activeTab = 'list'">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                        <i class="fa-solid fa-graduation-cap text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight tracking-tight text-white">115 學年度大學志願校系探索與分析平台</h1>
+                        <p class="text-xs text-slate-400">學習內容 ‧ 未來出路 ‧ 缺點與風險全覽</p>
+                    </div>
+                </div>
+
+                <!-- 導覽頁籤 Nav Tabs -->
+                <nav class="hidden md:flex space-x-1">
+                    <button @click="activeTab = 'list'" :class="activeTab === 'list' ? 'bg-slate-800 text-blue-400 font-semibold' : 'text-slate-300 hover:bg-slate-800 hover:text-white'" class="px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-list-check"></i> 100 大校系分析
+                    </button>
+                    <button @click="activeTab = 'backup'" :class="activeTab === 'backup' ? 'bg-slate-800 text-blue-400 font-semibold' : 'text-slate-300 hover:bg-slate-800 hover:text-white'" class="px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-shield-halved"></i> 備援補充校系
+                    </button>
+                    <button @click="activeTab = 'strategy'" :class="activeTab === 'strategy' ? 'bg-slate-800 text-blue-400 font-semibold' : 'text-slate-300 hover:bg-slate-800 hover:text-white'" class="px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-compass"></i> 志願策略與注意事項
+                    </button>
+                </nav>
+
+                <!-- 快捷功能按鈕 -->
+                <div class="flex items-center gap-2">
+                    <!-- 收藏夾按鈕 -->
+                    <button @click="showBookmarksModal = true" class="relative px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-sm flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-star"></i>
+                        <span class="hidden sm:inline">我的收藏</span>
+                        <span class="bg-amber-500 text-slate-900 text-xs font-bold px-1.5 py-0.5 rounded-full" x-text="bookmarks.length"></span>
+                    </button>
+
+                    <!-- 比對按鈕 -->
+                    <button @click="showCompareModal = true" :disabled="compareList.length === 0" :class="compareList.length > 0 ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'" class="px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                        <span class="hidden sm:inline">志願比對</span>
+                        <span class="bg-white/20 text-xs font-bold px-1.5 py-0.5 rounded-full" x-text="compareList.length"></span>
+                    </button>
+
+                    <!-- 列印 / 匯出 -->
+                    <button @click="window.print()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm flex items-center gap-1 transition" title="列印或匯出 PDF">
+                        <i class="fa-solid fa-print"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 手機版導覽選單 -->
+        <div class="md:hidden border-t border-slate-800 flex justify-around p-2 text-xs">
+            <button @click="activeTab = 'list'" :class="activeTab === 'list' ? 'text-blue-400 font-bold' : 'text-slate-400'" class="py-1 flex flex-col items-center">
+                <i class="fa-solid fa-list-check text-base mb-0.5"></i> 校系分析
+            </button>
+            <button @click="activeTab = 'backup'" :class="activeTab === 'backup' ? 'text-blue-400 font-bold' : 'text-slate-400'" class="py-1 flex flex-col items-center">
+                <i class="fa-solid fa-shield-halved text-base mb-0.5"></i> 備援校系
+            </button>
+            <button @click="activeTab = 'strategy'" :class="activeTab === 'strategy' ? 'text-blue-400 font-bold' : 'text-slate-400'" class="py-1 flex flex-col items-center">
+                <i class="fa-solid fa-compass text-base mb-0.5"></i> 填報策略
+            </button>
+        </div>
+    </header>
+
+    <!-- 主要內容區 Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- 頁籤一：100 大校系分析區塊 -->
+        <div x-show="activeTab === 'list'">
+
+            <!-- 數據統計區 Summary Dashboard -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 no-print">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500 font-medium">包含總校系數</div>
+                        <div class="text-2xl font-black text-slate-800" x-text="departments.length">100</div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-flag"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500 font-medium">國立大學校系</div>
+                        <div class="text-2xl font-black text-slate-800" x-text="departments.filter(d => d.is_national).length"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-school"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500 font-medium">私立老牌工科</div>
+                        <div class="text-2xl font-black text-slate-800" x-text="departments.filter(d => !d.is_national).length"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500 font-medium">包含缺點風險評估</div>
+                        <div class="text-2xl font-black text-slate-800">100%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 控制工具列 Toolbar & Filter Bar -->
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 mb-6 no-print space-y-4">
+                
+                <!-- 第一行：搜尋列與主要過濾 -->
+                <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                    <!-- 全域搜尋 Input -->
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" x-model="searchQuery" placeholder="搜尋校名、系名、關鍵字（如：AI、半導體、軟體、無塵室、研究所）..." 
+                               class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                        <button x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- 下拉選單過濾下拉 -->
+                    <div class="flex flex-wrap gap-2">
+                        <!-- 公私立 -->
+                        <select x-model="nationalFilter" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700">
+                            <option value="all">公私立：全部</option>
+                            <option value="national">僅看 國立大學</option>
+                            <option value="private">僅看 私立大學</option>
+                        </select>
+
+                        <!-- 通過機率 -->
+                        <select x-model="probFilter" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700">
+                            <option value="all">錄取機率：全部</option>
+                            <option value="high">安全 / 高機率 (>50%)</option>
+                            <option value="mid">平實 / 中機率 (20%~50%)</option>
+                            <option value="low">夢幻 / 挑戰 (<20%)</option>
+                            <option value="unmarked">未標示</option>
+                        </select>
+
+                        <!-- 排序機制 -->
+                        <select x-model="sortBy" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700">
+                            <option value="order">排序：PDF 順位 (預設)</option>
+                            <option value="prob-desc">通過機率：高 ➔ 低</option>
+                            <option value="prob-asc">通過機率：低 ➔ 高</option>
+                            <option value="name">校名拼音排序</option>
+                        </select>
+
+                        <!-- 檢視切換 (Grid vs Table) -->
+                        <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                            <button @click="viewMode = 'grid'" :class="viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'" class="px-3 py-1 rounded-lg text-sm transition">
+                                <i class="fa-solid fa-grip"></i>
+                            </button>
+                            <button @click="viewMode = 'table'" :class="viewMode === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'" class="px-3 py-1 rounded-lg text-sm transition">
+                                <i class="fa-solid fa-table-list"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第二行：熱門領域 Quick Category Filters -->
+                <div class="flex items-center gap-2 overflow-x-auto pt-2 border-t border-slate-100 text-xs no-scrollbar">
+                    <span class="text-slate-400 font-medium shrink-0">領域快速過濾：</span>
+                    <button @click="categoryFilter = ''" :class="categoryFilter === '' ? 'bg-blue-600 text-white font-medium shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-3 py-1.5 rounded-full shrink-0 transition">
+                        全部領域
+                    </button>
+
+                    <template x-for="cat in categories" :key="cat">
+                        <button @click="categoryFilter = (categoryFilter === cat ? '' : cat)" 
+                                :class="categoryFilter === cat ? 'bg-blue-600 text-white font-medium shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" 
+                                class="px-3 py-1.5 rounded-full shrink-0 transition" x-text="cat">
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- 目前搜尋/篩選結果狀態條 -->
+            <div class="flex items-center justify-between mb-4 text-sm text-slate-500 px-1">
+                <div>
+                    找到 <span class="font-bold text-slate-800" x-text="filteredDepartments.length"></span> 個符合條件的校系
+                    <span x-show="searchQuery || nationalFilter !== 'all' || probFilter !== 'all' || categoryFilter" class="text-blue-600 font-medium cursor-pointer ml-2 hover:underline text-xs" @click="resetFilters()">
+                        <i class="fa-solid fa-rotate-left"></i> 重設所有篩選
+                    </span>
+                </div>
+            </div>
+
+            <!-- 校系清單：網格卡片視圖 (Grid View) -->
+            <div x-show="viewMode === 'grid'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <template x-for="item in filteredDepartments" :key="item.id">
+                    <div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition border border-slate-200 overflow-hidden flex flex-col justify-between card-print relative">
+                        
+                        <!-- 卡片頂部校系資訊 Header -->
+                        <div class="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+                            <div class="flex items-start justify-between gap-3 mb-2">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-700" x-text="'PDF #' + item.pdf_order"></span>
+                                    <span :class="item.is_national ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-indigo-100 text-indigo-800 border border-indigo-200'" 
+                                          class="text-xs font-semibold px-2.5 py-0.5 rounded-md" 
+                                          x-text="item.is_national ? '國立' : '私立'"></span>
+                                    <span class="text-xs font-medium px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200" x-text="item.category"></span>
+                                </div>
+
+                                <!-- 收藏與比對按鈕 -->
+                                <div class="flex items-center gap-1.5 no-print">
+                                    <!-- 比對勾選 -->
+                                    <button @click="toggleCompare(item)" 
+                                            :class="isCompared(item.id) ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 border-slate-200'"
+                                            class="p-1.5 rounded-lg border text-xs flex items-center gap-1 transition"
+                                            title="加入比對">
+                                        <i class="fa-solid fa-scale-balanced"></i>
+                                        <span class="hidden sm:inline text-xs" x-text="isCompared(item.id) ? '已比對' : '比對'"></span>
+                                    </button>
+
+                                    <!-- 收藏按鈕 -->
+                                    <button @click="toggleBookmark(item)" 
+                                            :class="isBookmarked(item.id) ? 'text-amber-500 bg-amber-50 border-amber-200' : 'text-slate-400 bg-slate-100 hover:text-amber-500 border-slate-200'"
+                                            class="p-1.5 rounded-lg border text-sm transition"
+                                            title="收藏此校系">
+                                        <i :class="isBookmarked(item.id) ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex items-baseline justify-between mt-1">
+                                <h3 class="text-xl font-bold text-slate-900 tracking-tight">
+                                    <span x-text="item.school" class="text-slate-800"></span>
+                                    <span class="text-slate-400 font-light mx-1">｜</span>
+                                    <span x-text="item.dept" class="text-blue-600"></span>
+                                </h3>
+
+                                <!-- 通過機率 Badge -->
+                                <div class="shrink-0">
+                                    <template x-if="typeof item.pass_prob === 'number'">
+                                        <span :class="item.pass_prob >= 50 ? 'bg-emerald-500 text-white' : (item.pass_prob >= 20 ? 'bg-blue-500 text-white' : 'bg-amber-500 text-white')"
+                                              class="text-xs font-extrabold px-3 py-1 rounded-full shadow-sm">
+                                            錄取機率 <span x-text="item.pass_prob + '%'"></span>
+                                        </span>
+                                    </template>
+                                    <template x-if="item.pass_prob === '未標示' || item.pass_prob === None">
+                                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-200 text-slate-600">
+                                            機率未標示
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 卡片主要內容區 Body -->
+                        <div class="p-5 space-y-4 text-sm flex-grow">
+                            <!-- 主要學習內容 -->
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-book-open text-blue-500"></i> 主要學習內容
+                                </h4>
+                                <p class="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100" x-text="item.content"></p>
+                            </div>
+
+                            <!-- 未來可能出路 -->
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-briefcase text-emerald-500"></i> 未來可能出路
+                                </h4>
+                                <p class="text-slate-700 leading-relaxed bg-emerald-50/50 p-3 rounded-xl border border-emerald-100/60" x-text="item.career"></p>
+                            </div>
+
+                            <!-- 缺點／風險（選系前必看） -->
+                            <div>
+                                <h4 class="text-xs font-bold text-rose-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> 缺點／風險（選系前必看）
+                                </h4>
+                                <div class="bg-rose-50 border border-rose-200/80 p-3.5 rounded-xl text-rose-950 leading-relaxed">
+                                    <p x-text="item.risks"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </template>
+            </div>
+
+            <!-- 校系清單：表格視圖 (Table View) -->
+            <div x-show="viewMode === 'table'" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto no-print">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-800 text-white text-xs uppercase tracking-wider">
+                        <tr>
+                            <th class="p-3 text-center w-12">順位</th>
+                            <th class="p-3">學校與系所</th>
+                            <th class="p-3">領域</th>
+                            <th class="p-3">錄取機率</th>
+                            <th class="p-3">主要學習內容</th>
+                            <th class="p-3">未來出路</th>
+                            <th class="p-3 w-64 text-rose-300">缺點與風險</th>
+                            <th class="p-3 text-center w-24">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <template x-for="item in filteredDepartments" :key="item.id">
+                            <tr class="hover:bg-slate-50 transition">
+                                <td class="p-3 text-center font-bold text-slate-400" x-text="item.pdf_order"></td>
+                                <td class="p-3 font-bold text-slate-900 whitespace-nowrap">
+                                    <span :class="item.is_national ? 'text-emerald-700' : 'text-indigo-700'" class="text-xs font-normal block" x-text="item.is_national ? '國立' : '私立'"></span>
+                                    <span x-text="item.school"></span><br>
+                                    <span class="text-blue-600 font-semibold" x-text="item.dept"></span>
+                                </td>
+                                <td class="p-3 whitespace-nowrap text-xs">
+                                    <span class="px-2 py-1 rounded bg-slate-100 text-slate-700 font-medium" x-text="item.category"></span>
+                                </td>
+                                <td class="p-3 whitespace-nowrap font-bold text-xs">
+                                    <span x-text="item.pass_prob !== None && item.pass_prob !== '未標示' ? item.pass_prob + '%' : '未標示'" 
+                                          :class="typeof item.pass_prob === 'number' && item.pass_prob >= 50 ? 'text-emerald-600' : 'text-amber-600'"></span>
+                                </td>
+                                <td class="p-3 text-xs leading-relaxed max-w-xs" x-text="item.content"></td>
+                                <td class="p-3 text-xs leading-relaxed max-w-xs text-emerald-800" x-text="item.career"></td>
+                                <td class="p-3 text-xs leading-relaxed max-w-xs text-rose-800 bg-rose-50/50" x-text="item.risks"></td>
+                                <td class="p-3 text-center space-x-1 whitespace-nowrap">
+                                    <button @click="toggleBookmark(item)" :class="isBookmarked(item.id) ? 'text-amber-500' : 'text-slate-300 hover:text-amber-400'" class="p-1 text-base">
+                                        <i class="fa-solid fa-star"></i>
+                                    </button>
+                                    <button @click="toggleCompare(item)" :class="isCompared(item.id) ? 'text-blue-600 font-bold' : 'text-slate-400 hover:text-blue-500'" class="p-1 text-xs">
+                                        <i class="fa-solid fa-scale-balanced"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 無搜尋結果提示 -->
+            <div x-show="filteredDepartments.length === 0" class="text-center py-16 bg-white rounded-2xl border border-slate-200 mt-4">
+                <i class="fa-solid fa-folder-open text-4xl text-slate-300 mb-3 block"></i>
+                <h3 class="text-lg font-bold text-slate-700">沒有找到符合條件的校系</h3>
+                <p class="text-sm text-slate-400 mt-1">請嘗試縮短搜尋關鍵字或重設過濾條件</p>
+                <button @click="resetFilters()" class="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-500 transition">
+                    重設過濾條件
+                </button>
+            </div>
+
+        </div>
+
+        <!-- 頁籤二：備援補充校系專區 -->
+        <div x-show="activeTab === 'backup'" x-cloak class="space-y-6">
+            <div class="bg-gradient-to-r from-blue-900 to-indigo-900 text-white p-6 sm:p-8 rounded-3xl shadow-lg relative overflow-hidden">
+                <div class="relative z-10 max-w-3xl">
+                    <span class="px-3 py-1 rounded-full bg-blue-500/30 text-blue-200 text-xs font-semibold uppercase tracking-wider mb-3 inline-block">
+                        未在主清單中之補充校系
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">安全與落點備援校系庫</h2>
+                    <p class="text-blue-100 text-sm leading-relaxed" x-text="backupData.intro"></p>
+                </div>
+            </div>
+
+            <!-- 補充校系兩大分類卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 國立大學補充 -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+                        <i class="fa-solid fa-building-columns text-emerald-600"></i>
+                        1. 國立大學補充（落點或平實區間）
+                    </h3>
+                    <div class="space-y-4">
+                        <template x-for="item in backupData.national" :key="item.school">
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <div class="font-bold text-slate-900 text-base mb-1" x-text="item.school"></div>
+                                <div class="text-sm text-slate-600 leading-relaxed" x-text="item.depts"></div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 私立老牌工科補充 -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+                        <i class="fa-solid fa-microchip text-indigo-600"></i>
+                        2. 私立老牌工科 / 電資補充
+                    </h3>
+                    <div class="space-y-4">
+                        <template x-for="item in backupData.private" :key="item.school">
+                            <div class="bg-indigo-50/40 p-4 rounded-xl border border-indigo-100/60">
+                                <div class="font-bold text-indigo-950 text-base mb-2" x-text="item.school"></div>
+                                <ul class="list-disc list-inside text-sm text-slate-700 space-y-1">
+                                    <template x-for="dept in item.depts" :key="dept">
+                                        <li x-text="dept"></li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 頁籤三：志願策略與注意事項 -->
+        <div x-show="activeTab === 'strategy'" x-cloak class="space-y-6">
+            <!-- 志願填報建議策略 -->
+            <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                    <i class="fa-solid fa-chess text-blue-600"></i>
+                    志願填報建議策略
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <template x-for="(st, idx) in backupData.strategy" :key="st.stage">
+                        <div class="p-5 rounded-2xl border flex flex-col justify-between"
+                             :class="idx === 0 ? 'bg-purple-50 border-purple-200 text-purple-950' : (idx === 1 ? 'bg-blue-50 border-blue-200 text-blue-950' : 'bg-emerald-50 border-emerald-200 text-emerald-950')">
+                            <div>
+                                <div class="text-xs font-extrabold uppercase tracking-wider opacity-70 mb-1" x-text="'階段 ' + (idx+1)"></div>
+                                <h3 class="text-lg font-bold mb-3" x-text="st.stage"></h3>
+                                <p class="text-sm leading-relaxed" x-text="st.desc"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- 整體選填提醒 -->
+            <div class="bg-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-md">
+                <h2 class="text-xl font-bold mb-4 text-amber-400 flex items-center gap-2">
+                    <i class="fa-solid fa-lightbulb"></i>整體選填提醒與專家叮嚀
+                </h2>
+                <div class="text-slate-200 leading-relaxed text-sm space-y-4">
+                    <p class="bg-slate-800 p-4 rounded-xl border border-slate-700" x-text="overallReminders"></p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 比對 Modal (Compare Modal) -->
+    <div x-show="showCompareModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm no-print">
+        <div @click.away="showCompareModal = false" class="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-900 text-white">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-scale-balanced text-blue-400"></i> 校系橫向比對工具
+                </h3>
+                <button @click="showCompareModal = false" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-grow">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <template x-for="item in compareList" :key="item.id">
+                        <div class="bg-slate-50 rounded-2xl border border-slate-200 p-4 flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-200" x-text="'#' + item.pdf_order"></span>
+                                    <button @click="toggleCompare(item)" class="text-rose-500 hover:text-rose-700 text-xs">
+                                        <i class="fa-solid fa-trash"></i> 移除
+                                    </button>
+                                </div>
+                                <h4 class="font-bold text-base text-slate-900 mb-1" x-text="item.school + ' ' + item.dept"></h4>
+                                <span class="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-800 inline-block mb-3" x-text="item.category"></span>
+
+                                <div class="space-y-3 text-xs">
+                                    <div>
+                                        <strong class="text-slate-500 block mb-0.5">學習內容：</strong>
+                                        <p class="text-slate-700 bg-white p-2 rounded border" x-text="item.content"></p>
+                                    </div>
+                                    <div>
+                                        <strong class="text-slate-500 block mb-0.5">未來出路：</strong>
+                                        <p class="text-slate-700 bg-white p-2 rounded border" x-text="item.career"></p>
+                                    </div>
+                                    <div>
+                                        <strong class="text-rose-600 block mb-0.5">缺點與風險：</strong>
+                                        <p class="text-rose-900 bg-rose-50 p-2 rounded border border-rose-200" x-text="item.risks"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                <button @click="compareList = []" class="text-xs text-rose-600 hover:underline">
+                    <i class="fa-solid fa-broom"></i> 清空比對清單
+                </button>
+                <button @click="showCompareModal = false" class="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-medium">
+                    關閉視窗
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 收藏夾 Modal (Bookmarks Modal) -->
+    <div x-show="showBookmarksModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm no-print">
+        <div @click.away="showBookmarksModal = false" class="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[85vh] flex flex-col overflow-hidden">
+            <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-amber-500 text-slate-900">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-star"></i> 我的收藏校系清單
+                </h3>
+                <button @click="showBookmarksModal = false" class="text-slate-800 hover:text-slate-950">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-grow">
+                <template x-if="bookmarks.length === 0">
+                    <div class="text-center py-12 text-slate-400">
+                        <i class="fa-regular fa-star text-4xl mb-2 block"></i>
+                        目前尚未收藏任何校系，請在校系卡片點擊星星圖示進行收藏。
+                    </div>
+                </template>
+
+                <div class="space-y-3">
+                    <template x-for="item in bookmarkItems" :key="item.id">
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-4">
+                            <div>
+                                <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-200 mr-2" x-text="'#' + item.pdf_order"></span>
+                                <span class="font-bold text-slate-900" x-text="item.school + ' ' + item.dept"></span>
+                                <span class="text-xs text-slate-500 ml-2" x-text="'(' + item.category + ')'"></span>
+                            </div>
+                            <button @click="toggleBookmark(item)" class="text-rose-500 hover:text-rose-700 text-xs px-2 py-1 rounded border border-rose-200 bg-white">
+                                <i class="fa-solid fa-trash"></i> 移除
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                <span class="text-xs text-slate-500" x-text="'共收藏 ' + bookmarks.length + ' 個校系'"></span>
+                <button @click="showBookmarksModal = false" class="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-medium">
+                    關閉
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁腳 Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 text-center text-xs border-t border-slate-800 mt-auto no-print">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="mb-1">115 學年度大學志願校系探索與分析平台 ‧ 專為學生與家長打造的客觀評估工具</p>
+            <p class="text-slate-500">資料來源：115 學年度志願校系學習內容與缺點分析簡章文件</p>
+        </div>
+    </footer>
+
+    <!-- 腳本區域 Script -->
+    <script src="data.js"></script>
+    <script>
+        function app() {
+            return {
+                activeTab: 'list',
+                viewMode: 'grid',
+                searchQuery: '',
+                nationalFilter: 'all',
+                probFilter: 'all',
+                categoryFilter: '',
+                sortBy: 'order',
+                
+                departments: [],
+                overallReminders: '',
+                backupData: { national: [], private: [], strategy: [] },
+                
+                bookmarks: JSON.parse(localStorage.getItem('user_bookmarks') || '[]'),
+                compareList: [],
+                showCompareModal: false,
+                showBookmarksModal: false,
+
+                initData() {
+                    if (window.APP_DATA) {
+                        this.departments = window.APP_DATA.departments || [];
+                        this.overallReminders = window.APP_DATA.overall_reminders || '';
+                        this.backupData = window.APP_DATA.backup_suggestions || { national: [], private: [], strategy: [] };
+                    }
+                },
+
+                get categories() {
+                    const set = new Set();
+                    this.departments.forEach(d => {
+                        if (d.category) set.add(d.category);
+                    });
+                    return Array.from(set);
+                },
+
+                get filteredDepartments() {
+                    let result = this.departments.filter(d => {
+                        // 1. Search Query
+                        if (this.searchQuery) {
+                            const q = this.searchQuery.toLowerCase();
+                            const matchSchool = d.school.toLowerCase().includes(q);
+                            const matchDept = d.dept.toLowerCase().includes(q);
+                            const matchContent = d.content.toLowerCase().includes(q);
+                            const matchCareer = d.career.toLowerCase().includes(q);
+                            const matchRisks = d.risks.toLowerCase().includes(q);
+                            const matchCat = d.category.toLowerCase().includes(q);
+                            if (!matchSchool && !matchDept && !matchContent && !matchCareer && !matchRisks && !matchCat) {
+                                return false;
+                            }
+                        }
+
+                        // 2. National Filter
+                        if (this.nationalFilter === 'national' && !d.is_national) return false;
+                        if (this.nationalFilter === 'private' && d.is_national) return false;
+
+                        // 3. Probability Filter
+                        if (this.probFilter === 'high') {
+                            if (typeof d.pass_prob !== 'number' || d.pass_prob < 50) return false;
+                        } else if (this.probFilter === 'mid') {
+                            if (typeof d.pass_prob !== 'number' || d.pass_prob < 20 || d.pass_prob >= 50) return false;
+                        } else if (this.probFilter === 'low') {
+                            if (typeof d.pass_prob !== 'number' || d.pass_prob >= 20) return false;
+                        } else if (this.probFilter === 'unmarked') {
+                            if (typeof d.pass_prob === 'number') return false;
+                        }
+
+                        // 4. Category Filter
+                        if (this.categoryFilter && d.category !== this.categoryFilter) return false;
+
+                        return true;
+                    });
+
+                    // Sort
+                    if (this.sortBy === 'prob-desc') {
+                        result.sort((a, b) => (typeof b.pass_prob === 'number' ? b.pass_prob : -1) - (typeof a.pass_prob === 'number' ? a.pass_prob : -1));
+                    } else if (this.sortBy === 'prob-asc') {
+                        result.sort((a, b) => (typeof a.pass_prob === 'number' ? a.pass_prob : 999) - (typeof b.pass_prob === 'number' ? b.pass_prob : 999));
+                    } else if (this.sortBy === 'name') {
+                        result.sort((a, b) => a.school.localeCompare(b.school, 'zh-TW'));
+                    } else {
+                        result.sort((a, b) => a.pdf_order - b.pdf_order);
+                    }
+
+                    return result;
+                },
+
+                get bookmarkItems() {
+                    return this.departments.filter(d => this.bookmarks.includes(d.id));
+                },
+
+                toggleBookmark(item) {
+                    if (this.bookmarks.includes(item.id)) {
+                        this.bookmarks = this.bookmarks.filter(id => id !== item.id);
+                    } else {
+                        this.bookmarks.push(item.id);
+                    }
+                    localStorage.setItem('user_bookmarks', JSON.stringify(this.bookmarks));
+                },
+
+                isBookmarked(id) {
+                    return this.bookmarks.includes(id);
+                },
+
+                toggleCompare(item) {
+                    const idx = this.compareList.findIndex(c => c.id === item.id);
+                    if (idx >= 0) {
+                        this.compareList.splice(idx, 1);
+                    } else {
+                        if (this.compareList.length >= 4) {
+                            alert('比對數量上限為 4 個校系');
+                            return;
+                        }
+                        this.compareList.push(item);
+                    }
+                },
+
+                isCompared(id) {
+                    return this.compareList.some(c => c.id === id);
+                },
+
+                resetFilters() {
+                    this.searchQuery = '';
+                    this.nationalFilter = 'all';
+                    this.probFilter = 'all';
+                    this.categoryFilter = '';
+                    this.sortBy = 'order';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
